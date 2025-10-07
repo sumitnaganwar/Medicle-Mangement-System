@@ -8,6 +8,9 @@ function LoginPage() {
   const { setAuth } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const [otpSessionId, setOtpSessionId] = useState('');
+  const [otp, setOtp] = useState('');
+  const [step, setStep] = useState('login'); // 'login' | 'otp'
   const [loading, setLoading] = useState(false);
 
   function onChange(e) {
@@ -21,15 +24,17 @@ function LoginPage() {
     setError('');
     try {
       const { data } = await authService.login(form);
-      // After login, fetch fresh profile from DB to ensure dynamic data
-      if (data?.token) {
+      if (data?.otpSessionId) {
+        setOtpSessionId(data.otpSessionId);
+        setStep('otp');
+      } else if (data?.token) {
+        // fallback if backend returns token directly
         try {
           const profile = await userService.getProfile();
           setAuth({ token: data.token, user: profile?.data || data.user || null });
         } catch {
           setAuth({ token: data.token, user: data.user || null });
         }
-        // Navigate to dashboard after successful login
         navigate('/', { replace: true });
       }
     } catch (e) {
@@ -39,28 +44,66 @@ function LoginPage() {
     }
   }
 
+  async function onVerifyOtp(e) {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const { data } = await authService.verifyOtp(otpSessionId, otp);
+      if (data?.token) {
+        try {
+          const profile = await userService.getProfile();
+          setAuth({ token: data.token, user: profile?.data || data.user || null });
+        } catch {
+          setAuth({ token: data.token, user: data.user || null });
+        }
+        navigate('/', { replace: true });
+      }
+    } catch (e) {
+      const msg = e?.response?.data?.message || 'Invalid or expired OTP';
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="container" style={{ maxWidth: 420 }}>
-      <h2 className="my-4">Login</h2>
+      <h2 className="my-4">{step === 'login' ? 'Login' : 'Verify OTP'}</h2>
       {error && <div className="alert alert-danger">{error}</div>}
-      <form onSubmit={onSubmit} className="card p-3">
-        <div className="mb-3">
-          <label className="form-label">Email</label>
-          <input name="email" type="email" className="form-control" value={form.email} onChange={onChange} required />
-        </div>
-        <div className="mb-3">
-          <label className="form-label">Password</label>
-          <input name="password" type="password" className="form-control" value={form.password} onChange={onChange} required />
-        </div>
-        <button className="btn btn-primary" type="submit" disabled={loading}>
-          {loading ? 'Signing in...' : 'Login'}
-        </button>
-        <div className="mt-3">
-          <small>
-            No account? <Link to="/register">Register</Link>
-          </small>
-        </div>
-      </form>
+      {step === 'login' ? (
+        <form onSubmit={onSubmit} className="card p-3">
+          <div className="mb-3">
+            <label className="form-label">Email</label>
+            <input name="email" type="email" className="form-control" value={form.email} onChange={onChange} required />
+          </div>
+          <div className="mb-3">
+            <label className="form-label">Password</label>
+            <input name="password" type="password" className="form-control" value={form.password} onChange={onChange} required />
+          </div>
+          <button className="btn btn-primary" type="submit" disabled={loading}>
+            {loading ? 'Sending OTP...' : 'Login'}
+          </button>
+          <div className="mt-3">
+            <small>
+              No account? <Link to="/register">Register</Link>
+            </small>
+          </div>
+        </form>
+      ) : (
+        <form onSubmit={onVerifyOtp} className="card p-3">
+          <div className="mb-3">
+            <label className="form-label">Enter OTP sent to your email</label>
+            <input value={otp} onChange={(e) => setOtp(e.target.value)} className="form-control" placeholder="6-digit code" maxLength={6} />
+          </div>
+          <button className="btn btn-primary" type="submit" disabled={loading}>
+            {loading ? 'Verifying...' : 'Verify & Continue'}
+          </button>
+          <button type="button" className="btn btn-link" onClick={() => setStep('login')}>
+            Back
+          </button>
+        </form>
+      )}
     </div>
   );
 }

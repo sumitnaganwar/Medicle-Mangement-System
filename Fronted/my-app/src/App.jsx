@@ -8,6 +8,10 @@ import BillingPage from './components/pages/BillingPage';
 import ReportsPage from './components/pages/ReportsPage';
 import CustomersPage from './components/pages/CustomersPage';
 import ProfilePage from './components/pages/ProfilePage';
+import OwnerMonthlyReport from './components/pages/OwnerMonthlyReport';
+import OwnerTopMedicines from './components/pages/OwnerTopMedicines';
+import OwnerOutOfStock from './components/pages/OwnerOutOfStock';
+import OwnerExpiredHistory from './components/pages/OwnerExpiredHistory';
 import LoginPage from './components/pages/LoginPage';
 import RegisterPage from './components/pages/RegisterPage';
 import { AuthProvider, useAuth } from './components/common/AuthContext';
@@ -15,6 +19,8 @@ import './App.css';
 
 function PrivateRoute({ children }) {
   const { isAuthenticated, isLoading } = useAuth();
+  const authDisabled = (import.meta && import.meta.env && import.meta.env.VITE_AUTH_DISABLED === 'true');
+  if (authDisabled) return children;
   
   if (isLoading) {
     return (
@@ -31,6 +37,8 @@ function PrivateRoute({ children }) {
 
 function PublicRoute({ children }) {
   const { isAuthenticated, isLoading } = useAuth();
+  const authDisabled = (import.meta && import.meta.env && import.meta.env.VITE_AUTH_DISABLED === 'true');
+  if (authDisabled) return children;
   
   if (isLoading) {
     return (
@@ -43,6 +51,24 @@ function PublicRoute({ children }) {
   }
   
   return isAuthenticated ? <Navigate to="/" replace /> : children;
+}
+
+function OwnerRoute({ children }) {
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const authDisabled = (import.meta && import.meta.env && import.meta.env.VITE_AUTH_DISABLED === 'true');
+  if (authDisabled) return children;
+  if (isLoading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user?.role !== 'Owner') return <Navigate to="/" replace />;
+  return children;
 }
 
 function AppLayout() {
@@ -78,6 +104,11 @@ function App() {
             <Route path="/billing" element={<BillingPage />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            {/* Owner-only */}
+            <Route path="/owner/reports/monthly" element={<OwnerRoute><OwnerMonthlyReport /></OwnerRoute>} />
+            <Route path="/owner/reports/top-medicines" element={<OwnerRoute><OwnerTopMedicines /></OwnerRoute>} />
+            <Route path="/owner/reports/out-of-stock" element={<OwnerRoute><OwnerOutOfStock /></OwnerRoute>} />
+            <Route path="/owner/reports/expired" element={<OwnerRoute><OwnerExpiredHistory /></OwnerRoute>} />
           </Route>
 
           {/* Fallback: unauthenticated users go to login */}

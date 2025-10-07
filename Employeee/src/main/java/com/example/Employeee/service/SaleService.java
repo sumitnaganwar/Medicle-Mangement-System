@@ -155,6 +155,8 @@ public class SaleService {
                 .sum();
     }
 
+    
+
     public void deleteSale(Long saleId) {
         Sale sale = saleRepository.findById(saleId)
                 .orElseThrow(() -> new RuntimeException("Sale not found with id: " + saleId));

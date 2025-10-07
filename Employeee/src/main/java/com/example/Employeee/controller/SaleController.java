@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+ 
 
 @RestController
 @RequestMapping("/api/sales")
@@ -59,6 +60,8 @@ public class SaleController {
     public Double getTodayTotalSales() {
         return saleService.getTodayTotalSales();
     }
+
+    
 
     @DeleteMapping("/{saleId}")
     public ResponseEntity<?> deleteSale(@PathVariable Long saleId) {

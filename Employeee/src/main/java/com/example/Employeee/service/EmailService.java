@@ -52,6 +52,19 @@ public class EmailService {
         message.setText(body.toString());
         mailSender.send(message);
     }
+
+    public void sendOtp(String toEmail, String code) {
+        if (mailSender == null) return;
+        if (toEmail == null || toEmail.isBlank()) return;
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(toEmail);
+        if (fromEmail != null && !fromEmail.isBlank()) {
+            message.setFrom(fromEmail);
+        }
+        message.setSubject("Your Login OTP");
+        message.setText("Your OTP code is: " + code + "\nIt expires in 5 minutes.");
+        mailSender.send(message);
+    }
 }
 
 

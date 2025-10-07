@@ -101,6 +101,7 @@ export const userService = {
 
 export const authService = {
   login: (payload) => api.post('/auth/login', payload),
+  verifyOtp: (otpSessionId, otp) => api.post('/auth/verify-otp', { otpSessionId, otp }),
   register: (payload) => api.post('/auth/register', payload),
   logout: () => {
     localStorage.removeItem('auth_token');
