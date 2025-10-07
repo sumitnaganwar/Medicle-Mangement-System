@@ -6,6 +6,7 @@ public class SaleRequestDTO {
     private Long customerId;
     private String customerName;
     private String customerPhone;
+    private String customerEmail;
     private String paymentMethod;
     private List<SaleItemDTO> items;
 
@@ -16,6 +17,8 @@ public class SaleRequestDTO {
     public void setCustomerName(String customerName) { this.customerName = customerName; }
     public String getCustomerPhone() { return customerPhone; }
     public void setCustomerPhone(String customerPhone) { this.customerPhone = customerPhone; }
+    public String getCustomerEmail() { return customerEmail; }
+    public void setCustomerEmail(String customerEmail) { this.customerEmail = customerEmail; }
     public String getPaymentMethod() { return paymentMethod; }
     public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
     public List<SaleItemDTO> getItems() { return items; }

@@ -1,15 +1,14 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 
 const Sidebar = () => {
-  const location = useLocation();
-
   const menuItems = [
     { path: '/', icon: 'fas fa-tachometer-alt', label: 'Dashboard' },
     { path: '/medicines', icon: 'fas fa-pills', label: 'Medicines' },
     { path: '/customers', icon: 'fas fa-user-friends', label: 'Customers' },
     { path: '/billing', icon: 'fas fa-receipt', label: 'Billing' },
     { path: '/reports', icon: 'fas fa-chart-bar', label: 'Reports' },
+    { path: '/profile', icon: 'fas fa-user', label: 'Profile' },
   ];
 
   return (
@@ -18,15 +17,16 @@ const Sidebar = () => {
         <ul className="nav flex-column">
           {menuItems.map((item) => (
             <li className="nav-item" key={item.path}>
-              <Link
+              <NavLink
                 to={item.path}
-                className={`nav-link d-flex align-items-center ${
-                  location.pathname === item.path ? 'active text-primary' : 'text-dark'
-                }`}
+                end={item.path === '/'}
+                className={({ isActive }) =>
+                  `nav-link d-flex align-items-center ${isActive ? 'active text-primary' : 'text-dark'}`
+                }
               >
                 <i className={`${item.icon} me-3`}></i>
                 {item.label}
-              </Link>
+              </NavLink>
             </li>
           ))}
         </ul>

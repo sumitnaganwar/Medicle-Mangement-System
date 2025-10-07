@@ -31,6 +31,9 @@ public class SaleService {
     @Autowired
     private CustomerRepository customerRepository;
 
+    @Autowired(required = false)
+    private EmailService emailService;
+
     public List<Sale> getAllSales() {
         return saleRepository.findAll();
     }
@@ -70,7 +73,19 @@ public class SaleService {
             sale.setBillNumber(generateUniqueBillNumber());
         }
         Sale saved = saleRepository.save(sale);
+
+        // We no longer auto-send here; front-end will offer options
         return saved;
+    }
+
+    public void sendReceiptEmail(Long saleId, String toEmail) {
+        if (emailService == null) return;
+        Sale sale = saleRepository.findById(saleId)
+                .orElseThrow(() -> new RuntimeException("Sale not found"));
+        if (toEmail == null || toEmail.isBlank()) {
+            throw new RuntimeException("Email is required");
+        }
+        emailService.sendSaleReceipt(toEmail, sale);
     }
 
     private String generateUniqueBillNumber() {
@@ -103,7 +118,13 @@ public class SaleService {
         if (phone != null && !phone.isEmpty()) {
             Optional<Customer> existingCustomer = customerRepository.findByPhone(phone);
             if (existingCustomer.isPresent()) {
-                return existingCustomer.get();
+                // Update email if provided
+                Customer c = existingCustomer.get();
+                if (saleRequest.getCustomerEmail() != null && !saleRequest.getCustomerEmail().isEmpty()) {
+                    c.setEmail(saleRequest.getCustomerEmail());
+                    customerRepository.save(c);
+                }
+                return c;
             }
         }
 
@@ -114,6 +135,9 @@ public class SaleService {
                 : "Walk-in Customer";
         customer.setName(name);
         customer.setPhone(phone != null ? phone : "0000000000");
+        if (saleRequest.getCustomerEmail() != null && !saleRequest.getCustomerEmail().isEmpty()) {
+            customer.setEmail(saleRequest.getCustomerEmail());
+        }
 
         return customerRepository.save(customer);
     }

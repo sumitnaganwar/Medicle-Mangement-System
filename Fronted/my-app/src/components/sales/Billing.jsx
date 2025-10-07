@@ -10,9 +10,10 @@ const Billing = () => {
   const [cart, setCart] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredMedicines, setFilteredMedicines] = useState([]);
-  const [customer, setCustomer] = useState({ name: '', phone: '' });
+  const [customer, setCustomer] = useState({ name: '', phone: '', email: '' });
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [loading, setLoading] = useState(false);
+  const [postSale, setPostSale] = useState({ open: false, sale: null, email: '' });
 
   const isValidPhone = (phone) => /^(\d){10}$/.test((phone || '').trim());
   const isCustomerValid = () => customer.name.trim().length > 0 && isValidPhone(customer.phone);
@@ -143,6 +144,7 @@ const Billing = () => {
       const saleData = {
         customerName: customer.name || 'Walk-in Customer',
         customerPhone: customer.phone || '0000000000',
+        customerEmail: (customer.email || '').trim(),
         paymentMethod,
         items: cart.map(item => ({
           medicineId: item.medicine.id,
@@ -153,17 +155,20 @@ const Billing = () => {
       const res = await saleService.createSale(saleData);
       const createdSale = res?.data || {};
 
-      if (paymentMethod === 'CASH' && createdSale) {
-        printReceipt(createdSale);
-      } else {
-        alert('Sale completed successfully!');
-      }
+      // Show options modal with email prefilled from the bill form
+      const emailForReceipt = (customer.email || '').trim();
+      setPostSale({ open: true, sale: createdSale, email: emailForReceipt });
       setCart([]);
-      setCustomer({ name: '', phone: '' });
+      setCustomer({ name: '', phone: '', email: '' });
       setPaymentMethod('CASH');
       await loadMedicines(); // Refresh stock
     } catch (error) {
-      alert(error.response?.data || 'Error processing sale');
+      const serverData = error?.response?.data;
+      const message = (typeof serverData === 'string')
+        ? serverData
+        : (serverData?.message || JSON.stringify(serverData) || 'Error processing sale');
+      alert(message);
+      console.error('Sale error:', error);
     } finally {
       setLoading(false);
     }
@@ -257,6 +262,15 @@ const Billing = () => {
     }
   };
 
+  function closePostSale() {
+    setPostSale({ open: false, sale: null, email: '' });
+    // Clear the bill after user closes the modal
+    setCart([]);
+    setCustomer({ name: '', phone: '', email: '' });
+    setPaymentMethod('CASH');
+    loadMedicines();
+  }
+
   return (
     <div className="billing">
       <div className="row">
@@ -292,6 +306,19 @@ const Billing = () => {
                     value={customer.name}
                     onChange={(e) => setCustomer(prev => ({ ...prev, name: e.target.value }))}
                   />
+                </div>
+              </div>
+              <div className="row mb-3">
+                <div className="col-md-6">
+                  <label className="form-label">Customer Email (optional)</label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    placeholder="customer@example.com"
+                    value={customer.email}
+                    onChange={(e) => setCustomer(prev => ({ ...prev, email: e.target.value }))}
+                  />
+                  <small className="text-muted">If provided, the bill will be emailed automatically.</small>
                 </div>
               </div>
               <div className="row">
@@ -424,6 +451,54 @@ const Billing = () => {
           </div>
         </div>
       </div>
+
+      {postSale.open && (
+        <div className="modal" style={{ display: 'block', background: 'rgba(0,0,0,0.35)' }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Sale Completed</h5>
+                <button type="button" className="btn-close" onClick={closePostSale}></button>
+              </div>
+              <div className="modal-body">
+                <p>Choose an action for Bill {postSale.sale?.billNumber || postSale.sale?.id}</p>
+                <div className="mb-3">
+                  <label className="form-label">Send to Email</label>
+                  <div className="input-group">
+                    <input
+                      type="email"
+                      className="form-control"
+                      placeholder="customer@example.com"
+                      value={postSale.email}
+                      onChange={(e) => setPostSale(prev => ({ ...prev, email: e.target.value }))}
+                    />
+                    <button
+                      className="btn btn-outline-primary"
+                      onClick={async () => {
+                        try {
+                          const email = (postSale.email || '').trim();
+                          if (!email) { alert('Please enter an email'); return; }
+                          await saleService.sendReceipt(postSale.sale.id, email);
+                          alert('Email sent');
+                        } catch (err) {
+                          const msg = err?.response?.data?.message || 'Failed to send email';
+                          alert(msg);
+                        }
+                      }}
+                    >
+                      Send Email
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={closePostSale}>Close</button>
+                <button className="btn btn-success" onClick={() => printReceipt(postSale.sale)}>Print Bill</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

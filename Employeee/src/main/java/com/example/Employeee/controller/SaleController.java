@@ -36,7 +36,17 @@ public class SaleController {
             Sale createdSale = saleService.createSale(saleRequest);
             return ResponseEntity.ok(createdSale);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{saleId}/send-receipt")
+    public ResponseEntity<?> sendReceipt(@PathVariable Long saleId, @RequestParam("email") String email) {
+        try {
+            saleService.sendReceiptEmail(saleId, email);
+            return ResponseEntity.ok(java.util.Map.of("message", "Receipt sent"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
         }
     }
 
