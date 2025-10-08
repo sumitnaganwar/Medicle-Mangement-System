@@ -12,6 +12,8 @@ export const medicineService = {
   searchMedicines: (name) => api.get(`/medicines/search?name=${name}`),
   getMedicinesByCategory: (category) => api.get(`/medicines/category/${category}`),
   getLowStockMedicines: () => api.get('/medicines/low-stock'),
+  // Zero stock only (backend should return items where stock == 0)
+  getZeroStockMedicines: () => api.get('/medicines/zero-stock'),
   
   // Additional features
   getExpiredMedicines: () => api.get('/medicines/expired'),

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+// Removed Transactions navigation links
 import { saleService, medicineService } from '../services/api';
 import { formatCurrency, formatDate } from '../utils/helpers';
 
@@ -10,6 +11,14 @@ const ReportsPage = () => {
     start: new Date().toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0]
   });
+  const [month, setMonth] = useState(new Date().getMonth() + 1); // 1..12
+  const [year, setYear] = useState(new Date().getFullYear());
+
+  const monthOptions = useMemo(() => (
+    [
+      'January','February','March','April','May','June','July','August','September','October','November','December'
+    ].map((name, idx) => ({ value: idx + 1, label: name }))
+  ), []);
 
   useEffect(() => {
     loadData();
@@ -29,6 +38,21 @@ const ReportsPage = () => {
       setLoading(false);
     }
   };
+
+  function setMonthRange(y, m) {
+    const start = new Date(y, m - 1, 1);
+    const end = new Date(y, m, 0);
+    setDateRange({
+      start: start.toISOString().split('T')[0],
+      end: end.toISOString().split('T')[0]
+    });
+  }
+
+  useEffect(() => {
+    // initialize to current month range
+    setMonthRange(year, month);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const getFilteredSales = () => {
     return sales.filter(sale => {
@@ -50,6 +74,20 @@ const ReportsPage = () => {
       totalItems,
       averageSale: filteredSales.length > 0 ? totalRevenue / filteredSales.length : 0
     };
+  };
+
+  const getMonthlySummary = () => {
+    // Group by month of saleDate
+    const summary = {};
+    sales.forEach(sale => {
+      const d = new Date(sale.saleDate);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!summary[key]) summary[key] = { year: d.getFullYear(), month: d.getMonth() + 1, totalRevenue: 0, totalItems: 0, totalSales: 0 };
+      summary[key].totalRevenue += sale.totalAmount;
+      summary[key].totalItems += sale.items.reduce((acc, it) => acc + it.quantity, 0);
+      summary[key].totalSales += 1;
+    });
+    return Object.values(summary).sort((a, b) => (a.year - b.year) || (a.month - b.month));
   };
 
   const getTopMedicines = () => {
@@ -75,6 +113,8 @@ const ReportsPage = () => {
       .slice(0, 10);
   };
 
+  // Transactions summary removed from Reports page
+
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '400px' }}>
@@ -96,6 +136,8 @@ const ReportsPage = () => {
         </div>
       </div>
 
+      {/* Transactions cards removed */}
+
       <div className="row mb-4">
         <div className="col-md-6">
           <div className="card">
@@ -104,6 +146,20 @@ const ReportsPage = () => {
             </div>
             <div className="card-body">
               <div className="row">
+                <div className="col-md-12 mb-2">
+                  <div className="d-flex align-items-end gap-2">
+                    <div style={{ minWidth: 180 }}>
+                      <label className="form-label">Quick Month</label>
+                      <div className="d-flex gap-2">
+                        <select className="form-select" value={month} onChange={(e) => setMonth(Number(e.target.value))}>
+                          {monthOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                        </select>
+                        <input type="number" className="form-control" value={year} onChange={(e) => setYear(Number(e.target.value))} />
+                        <button className="btn btn-outline-primary" onClick={() => setMonthRange(year, month)}>Apply</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 <div className="col-md-6">
                   <label className="form-label">Start Date</label>
                   <input
@@ -131,6 +187,40 @@ const ReportsPage = () => {
             <div className="card-body text-center">
               <h4>{formatCurrency(stats.totalRevenue)}</h4>
               <p className="mb-0">Total Revenue in Selected Period</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="row mb-4">
+        <div className="col-12">
+          <div className="card">
+            <div className="card-header">
+              <h5 className="mb-0">Monthly Summary (All Data)</h5>
+            </div>
+            <div className="card-body">
+              <div className="table-responsive">
+                <table className="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>Month</th>
+                      <th>Total Bills</th>
+                      <th>Total Items</th>
+                      <th>Total Revenue</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {getMonthlySummary().map(row => (
+                      <tr key={`${row.year}-${row.month}`}>
+                        <td>{monthOptions[row.month - 1].label} {row.year}</td>
+                        <td>{row.totalSales}</td>
+                        <td>{row.totalItems}</td>
+                        <td>{formatCurrency(row.totalRevenue)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
@@ -171,64 +261,7 @@ const ReportsPage = () => {
         </div>
       </div>
 
-      <div className="row">
-        <div className="col-md-6">
-          <div className="card">
-            <div className="card-header">
-              <h5 className="mb-0">Top Selling Medicines</h5>
-            </div>
-            <div className="card-body">
-              <div className="table-responsive">
-                <table className="table table-sm">
-                  <thead>
-                    <tr>
-                      <th>Medicine</th>
-                      <th>Quantity Sold</th>
-                      <th>Revenue</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {topMedicines.map((item, index) => (
-                      <tr key={item.medicine.id}>
-                        <td>
-                          <strong>{item.medicine.name}</strong>
-                          <small className="text-muted d-block">{item.medicine.category}</small>
-                        </td>
-                        <td>{item.totalQuantity}</td>
-                        <td>{formatCurrency(item.totalRevenue)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-md-6">
-          <div className="card">
-            <div className="card-header">
-              <h5 className="mb-0">Recent Sales</h5>
-            </div>
-            <div className="card-body">
-              <div className="recent-sales">
-                {getFilteredSales().slice(0, 5).map(sale => (
-                  <div key={sale.id} className="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
-                    <div>
-                      <strong>{sale.billNumber}</strong>
-                      <small className="text-muted d-block">{formatDate(sale.saleDate)}</small>
-                    </div>
-                    <div className="text-end">
-                      <div className="text-success">{formatCurrency(sale.totalAmount)}</div>
-                      <small className="text-muted">{sale.paymentMethod}</small>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Top Selling Medicines section removed; moved to dedicated page */}
     </div>
   );
 };

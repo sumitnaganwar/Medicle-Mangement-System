@@ -2,13 +2,16 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import Header from './components/common/Header';
 import Sidebar from './components/common/Sidebar';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import DashboardPage from './components/pages/DashboardPage';
 import MedicinePage from './components/pages/MedicinePage';
 import BillingPage from './components/pages/BillingPage';
 import ReportsPage from './components/pages/ReportsPage';
+import TransactionsPage from './components/pages/TransactionsPage';
+import TopMedicinesPage from './components/pages/TopMedicinesPage';
+import NearExpiryMedicines from './components/pages/NearExpiryMedicines';
 import CustomersPage from './components/pages/CustomersPage';
 import ProfilePage from './components/pages/ProfilePage';
-import OwnerMonthlyReport from './components/pages/OwnerMonthlyReport';
 import OwnerTopMedicines from './components/pages/OwnerTopMedicines';
 import OwnerOutOfStock from './components/pages/OwnerOutOfStock';
 import OwnerExpiredHistory from './components/pages/OwnerExpiredHistory';
@@ -78,7 +81,9 @@ function AppLayout() {
       <div className="main-content d-flex">
         <Sidebar />
         <div className="content-area flex-grow-1 p-4">
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </div>
       </div>
     </>
@@ -103,9 +108,13 @@ function App() {
             <Route path="/customers" element={<CustomersPage />} />
             <Route path="/billing" element={<BillingPage />} />
             <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/transactions" element={<TransactionsPage />} />
+            <Route path="/top-medicines" element={<TopMedicinesPage />} />
+            <Route path="/near-expiry" element={<NearExpiryMedicines />} />
+            <Route path="/out-of-stock" element={<OwnerOutOfStock />} />
+            <Route path="/expired-medicines" element={<OwnerExpiredHistory />} />
             <Route path="/profile" element={<ProfilePage />} />
             {/* Owner-only */}
-            <Route path="/owner/reports/monthly" element={<OwnerRoute><OwnerMonthlyReport /></OwnerRoute>} />
             <Route path="/owner/reports/top-medicines" element={<OwnerRoute><OwnerTopMedicines /></OwnerRoute>} />
             <Route path="/owner/reports/out-of-stock" element={<OwnerRoute><OwnerOutOfStock /></OwnerRoute>} />
             <Route path="/owner/reports/expired" element={<OwnerRoute><OwnerExpiredHistory /></OwnerRoute>} />
