@@ -15,6 +15,7 @@ import ProfilePage from './components/pages/ProfilePage';
 import OwnerTopMedicines from './components/pages/OwnerTopMedicines';
 import OwnerOutOfStock from './components/pages/OwnerOutOfStock';
 import OwnerExpiredHistory from './components/pages/OwnerExpiredHistory';
+import ProfitAnalysis from './components/pages/ProfitAnalysis';
 import LoginPage from './components/pages/LoginPage';
 import RegisterPage from './components/pages/RegisterPage';
 import { AuthProvider, useAuth } from './components/common/AuthContext';
@@ -109,6 +110,7 @@ function App() {
             <Route path="/billing" element={<BillingPage />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/transactions" element={<TransactionsPage />} />
+            <Route path="/profit-analysis" element={<ProfitAnalysis />} />
             <Route path="/top-medicines" element={<TopMedicinesPage />} />
             <Route path="/near-expiry" element={<NearExpiryMedicines />} />
             <Route path="/out-of-stock" element={<OwnerOutOfStock />} />

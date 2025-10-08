@@ -34,6 +34,7 @@ const Sidebar = () => {
     { path: '/customers', icon: 'fas fa-user-friends', label: 'Customers' },
     { path: '/billing', icon: 'fas fa-receipt', label: 'Billing' },
     { path: '/reports', icon: 'fas fa-chart-bar', label: 'Reports' },
+    { path: '/profit-analysis', icon: 'fas fa-chart-line', label: 'Profit Analysis' },
     { path: '/transactions', icon: 'fas fa-exchange-alt', label: 'Transactions' },
     // Out-of-Stock will be injected below when dynamic count > 0
     { path: '/expired-medicines', icon: 'fas fa-calendar-times', label: 'Expired Medicines History' },
