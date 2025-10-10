@@ -6,7 +6,7 @@ import { useAuth } from '../common/AuthContext';
 function RegisterPage() {
   const navigate = useNavigate();
   const { setAuth } = useAuth();
-  const [form, setForm] = useState({ name: '', email: '', password: '', address: '', role: 'Employee', avatarUrl: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', address: '', role: 'Employee', phone: '', avatarUrl: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -86,6 +86,10 @@ function RegisterPage() {
         <div className="mb-3">
           <label className="form-label">Email</label>
           <input name="email" type="email" className="form-control" value={form.email} onChange={onChange} required />
+        </div>
+        <div className="mb-3">
+          <label className="form-label">Phone</label>
+          <input name="phone" className="form-control" value={form.phone} onChange={onChange} />
         </div>
         <div className="mb-3">
           <label className="form-label">Password</label>

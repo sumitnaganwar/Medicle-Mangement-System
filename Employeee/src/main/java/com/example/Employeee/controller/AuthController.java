@@ -28,6 +28,7 @@ public class AuthController {
         String password = payload.getOrDefault("password", "");
         String address = payload.getOrDefault("address", "");
         String role = payload.getOrDefault("role", "Employee");
+        String phone = payload.getOrDefault("phone", null);
         String avatarUrl = payload.getOrDefault("avatarUrl", "");
 
         if (userService.emailExists(email)) {
@@ -38,7 +39,7 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("message", "Photo is required"));
         }
 
-        User user = userService.register(name, email, password, address, role, avatarUrl);
+        User user = userService.register(name, email, password, address, role, phone, avatarUrl);
         // For security and UX: do NOT auto-login after registration. Client should go to login page.
         return ResponseEntity.ok(Map.of("message", "Registered successfully. Please login."));
     }

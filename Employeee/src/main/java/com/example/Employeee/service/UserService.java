@@ -30,15 +30,21 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public User register(String name, String email, String password, String address, String role, String avatarUrl) {
+    public User register(String name, String email, String password, String address, String role, String phone, String avatarUrl) {
         User user = new User();
         user.setName(name);
         user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(password));
         user.setAddress(address);
         user.setRole(role);
+        user.setPhone(phone);
         user.setAvatarUrl(avatarUrl);
         return userRepository.save(user);
+    }
+
+    // Backward-compatible overload (without phone)
+    public User register(String name, String email, String password, String address, String role, String avatarUrl) {
+        return register(name, email, password, address, role, null, avatarUrl);
     }
 
     public Optional<User> findByEmail(String email) {

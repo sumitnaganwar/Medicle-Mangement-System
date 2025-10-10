@@ -22,6 +22,7 @@ function PurchaseHub() {
   
   // Order History State
   const [orderHistory, setOrderHistory] = useState([]);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   
   // Pay Order State
   const [paymentForm, setPaymentForm] = useState({
@@ -527,16 +528,21 @@ function PurchaseHub() {
                               </span>
                             </td>
                             <td>
+                              {order.status !== 'DELIVERED' && order.status !== 'PAID' && (
+                                <button 
+                                  className="btn btn-sm btn-outline-primary me-2"
+                                  onClick={() => {
+                                    setPaymentForm(prev => ({ ...prev, orderId: order.id, amount: order.total }));
+                                    setActiveTab('pay');
+                                  }}
+                                >
+                                  Pay
+                                </button>
+                              )}
                               <button 
-                                className="btn btn-sm btn-outline-primary me-2"
-                                onClick={() => {
-                                  setPaymentForm(prev => ({ ...prev, orderId: order.id, amount: order.total }));
-                                  setActiveTab('pay');
-                                }}
+                                className="btn btn-sm btn-outline-secondary"
+                                onClick={() => setSelectedOrder(order)}
                               >
-                                Pay
-                              </button>
-                              <button className="btn btn-sm btn-outline-secondary">
                                 View Details
                               </button>
                             </td>
@@ -671,6 +677,41 @@ function PurchaseHub() {
           )}
         </div>
       </div>
+      {/* Dynamic Order Details Drawer */}
+      {selectedOrder && (
+        <div className="card mt-4">
+          <div className="card-header d-flex justify-content-between align-items-center">
+            <h5 className="mb-0">Order Details - {selectedOrder.id}</h5>
+            <button className="btn btn-sm btn-outline-secondary" onClick={() => setSelectedOrder(null)}>Close</button>
+          </div>
+          <div className="card-body">
+            <div className="row g-3">
+              <div className="col-md-4"><strong>Date:</strong> {new Date(selectedOrder.createdAt).toLocaleString()}</div>
+              <div className="col-md-4"><strong>Status:</strong> {selectedOrder.status}</div>
+              <div className="col-md-4"><strong>Total:</strong> ${selectedOrder.total?.toFixed(2) || '0.00'}</div>
+              <div className="col-md-6"><strong>Customer:</strong> {selectedOrder.customerName}</div>
+              {selectedOrder.deliveryAddress && (
+                <div className="col-md-6"><strong>Address:</strong> {selectedOrder.deliveryAddress}</div>
+              )}
+              <div className="col-12">
+                <h6>Items</h6>
+                {selectedOrder.items && selectedOrder.items.length > 0 ? (
+                  <ul className="list-group">
+                    {selectedOrder.items.map((it, idx) => (
+                      <li key={idx} className="list-group-item d-flex justify-content-between">
+                        <span>{it.medicineName || it.name}</span>
+                        <span className="text-muted">{it.quantity} x ${it.price}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="text-muted">No items</div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
