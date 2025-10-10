@@ -1,6 +1,7 @@
 package com.example.Employeee.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.security.SecureRandom;
 import java.time.Instant;
@@ -24,6 +25,21 @@ public class OtpService {
 
     private final Map<String, OtpRecord> sessionIdToOtp = new ConcurrentHashMap<>();
     private final SecureRandom random = new SecureRandom();
+
+    @Value("${otp.bypass.enabled:false}")
+    private boolean bypassEnabled;
+
+    @Value("${otp.bypass.email:}")
+    private String bypassEmail;
+
+    // Expose configuration so controllers can safely check bypass settings
+    public boolean isBypassEnabled() {
+        return bypassEnabled;
+    }
+
+    public String getBypassEmail() {
+        return bypassEmail;
+    }
 
     public String startOtpSession(String email, long ttlMillis) {
         String sessionId = UUID.randomUUID().toString();
@@ -55,12 +71,31 @@ public class OtpService {
 
     public boolean verify(String sessionId, String code) {
         OtpRecord rec = sessionIdToOtp.get(sessionId);
-        if (rec == null) return false;
-        if (Instant.now().toEpochMilli() > rec.expiresAt) {
+        if (rec == null) {
+            System.out.println("DEBUG: OTP session not found for ID: " + sessionId);
+            return false;
+        }
+        
+        long currentTime = Instant.now().toEpochMilli();
+        if (currentTime > rec.expiresAt) {
+            System.out.println("DEBUG: OTP expired. Current: " + currentTime + ", Expires: " + rec.expiresAt);
             sessionIdToOtp.remove(sessionId);
             return false;
         }
-        if (!rec.code.equals(code)) return false;
+        
+        System.out.println("DEBUG: Comparing codes - Expected: " + rec.code + ", Received: " + code);
+        if (!rec.code.equals(code)) {
+            System.out.println("DEBUG: OTP codes do not match");
+            // Configurable development bypass: only accept when explicitly enabled and email matches
+            if (bypassEnabled && bypassEmail != null && !bypassEmail.isBlank() && bypassEmail.equalsIgnoreCase(rec.email)) {
+                System.out.println("WARNING: OTP bypass enabled for " + rec.email + ". Accepting OTP despite mismatch.");
+                sessionIdToOtp.remove(sessionId);
+                return true;
+            }
+            return false;
+        }
+        
+        System.out.println("DEBUG: OTP verification successful");
         sessionIdToOtp.remove(sessionId);
         return true;
     }

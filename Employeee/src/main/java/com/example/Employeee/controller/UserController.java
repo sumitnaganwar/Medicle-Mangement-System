@@ -57,6 +57,53 @@ public class UserController {
         return ResponseEntity.ok(me);
     }
 
+    @GetMapping("/owner")
+    public ResponseEntity<?> getOwner() {
+        User owner = userRepository.findFirstByRoleIgnoreCaseOrderByIdAsc("Owner").orElse(null);
+        if (owner == null) return ResponseEntity.status(404).body(java.util.Map.of("message", "Owner not found"));
+        java.util.Map<String, Object> me = new java.util.LinkedHashMap<>();
+        me.put("id", owner.getId());
+        me.put("name", owner.getName());
+        me.put("email", owner.getEmail());
+        me.put("address", owner.getAddress());
+        me.put("role", owner.getRole());
+        me.put("phone", owner.getPhone());
+        me.put("avatarUrl", owner.getAvatarUrl());
+        return ResponseEntity.ok(me);
+    }
+
+    @GetMapping("/owners")
+    public ResponseEntity<?> listOwners() {
+        java.util.List<User> owners = userRepository.findByRoleIgnoreCase("Owner");
+        java.util.List<java.util.Map<String, Object>> list = new java.util.ArrayList<>();
+        for (User u : owners) {
+            java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", u.getId());
+            m.put("name", u.getName());
+            m.put("email", u.getEmail());
+            m.put("address", u.getAddress());
+            m.put("phone", u.getPhone());
+            m.put("avatarUrl", u.getAvatarUrl());
+            list.add(m);
+        }
+        return ResponseEntity.ok(list);
+    }
+
+    @GetMapping("/suppliers")
+    public ResponseEntity<?> listSuppliersUsers() {
+        java.util.List<User> suppliers = userRepository.findByRoleIgnoreCase("Supplier");
+        java.util.List<java.util.Map<String, Object>> list = new java.util.ArrayList<>();
+        for (User u : suppliers) {
+            java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", u.getId());
+            m.put("name", u.getName());
+            m.put("email", u.getEmail());
+            m.put("phone", u.getPhone());
+            list.add(m);
+        }
+        return ResponseEntity.ok(list);
+    }
+
     @PutMapping("/me")
     public ResponseEntity<?> updateMe(Principal principal, @RequestBody Map<String, String> body) {
         String email = principal != null ? principal.getName() : null;

@@ -1,5 +1,7 @@
 package com.example.Employeee.config;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,7 +40,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                // Log the exception for debugging
+                System.err.println("JWT validation failed: " + e.getMessage());
                 // Invalid token; proceed without auth
             }
         }

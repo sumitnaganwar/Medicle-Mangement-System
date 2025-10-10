@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>localStorage Test</title>
+</head>
+<body>
+    <h1>localStorage Quota Test</h1>
+    <button onclick="testStorage()">Test Storage</button>
+    <button onclick="clearStorage()">Clear Storage</button>
+    <div id="result"></div>
+
+    <script>
+        function testStorage() {
+            try {
+                // Test storing a large object
+                const largeObject = {
+                    id: 1,
+                    name: 'Test User',
+                    email: 'test@example.com',
+                    role: 'User',
+                    // Add some large data to test quota
+                    data: 'x'.repeat(1000000) // 1MB of data
+                };
+                
+                localStorage.setItem('test_large_data', JSON.stringify(largeObject));
+                document.getElementById('result').innerHTML = '✅ Large data stored successfully!';
+            } catch (error) {
+                if (error.name === 'QuotaExceededError') {
+                    document.getElementById('result').innerHTML = '❌ Quota exceeded: ' + error.message;
+                } else {
+                    document.getElementById('result').innerHTML = '❌ Error: ' + error.message;
+                }
+            }
+        }
+
+        function clearStorage() {
+            localStorage.clear();
+            document.getElementById('result').innerHTML = '✅ Storage cleared!';
+        }
+
+        // Show current storage size
+        function getStorageSize() {
+            let total = 0;
+            for (let key in localStorage) {
+                if (localStorage.hasOwnProperty(key)) {
+                    total += localStorage[key].length + key.length;
+                }
+            }
+            return total;
+        }
+
+        document.getElementById('result').innerHTML = 'Current storage size: ' + Math.round(getStorageSize() / 1024) + ' KB';
+    </script>
+</body>
+</html>

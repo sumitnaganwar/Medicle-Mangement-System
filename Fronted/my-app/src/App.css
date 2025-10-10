@@ -1,44 +1,28 @@
-.app-container {
-  min-height: 100vh;
-  background-color: #f8f9fa;
-}
+.app-container { min-height: 100vh; background: var(--bg); }
 
 .main-content {
   min-height: calc(100vh - 60px);
 }
 
-.sidebar {
-  width: 250px;
-  background: #fff;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-}
+.sidebar { width: 250px; background: var(--card); box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06); border-right: 1px solid rgba(2,6,23,.05); }
 
-.content-area {
-  background: #f8f9fa;
-  min-height: calc(100vh - 60px);
-}
+.content-area { background: var(--bg); min-height: calc(100vh - 60px); }
 
-.nav-link.active {
-  background-color: #e3f2fd !important;
-  border-color: #dee2e6 #dee2e6 #fff !important;
-}
+.nav-link { border-radius: 10px; padding: .55rem .75rem; }
+.nav-link.active { background: rgba(13,110,253,.12) !important; color: var(--brand) !important; font-weight: 600; }
 
-.card {
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-  border: 1px solid rgba(0, 0, 0, 0.125);
-}
+.card { background: var(--card); border: 1px solid rgba(2,6,23,.06); box-shadow: 0 10px 30px rgba(2,6,23,.06); border-radius: 16px; }
+.card-header { background: transparent; border-bottom: 1px solid rgba(2,6,23,.06); font-weight: 600; }
 
 .table-responsive {
   border-radius: 0.375rem;
 }
 
-.btn {
-  border-radius: 0.375rem;
-}
+.btn { border-radius: 10px; }
+.btn-primary { background: var(--brand); border-color: var(--brand); box-shadow: 0 8px 20px rgba(13,110,253,.25); }
+.btn-outline-primary { color: var(--brand); border-color: var(--brand); }
 
-.form-control, .form-select {
-  border-radius: 0.375rem;
-}
+.form-control, .form-select { border-radius: 10px; }
 
 .bill-item {
   transition: all 0.3s ease;
@@ -48,13 +32,8 @@
   background-color: #f8f9fa;
 }
 
-.stats-card {
-  transition: transform 0.3s ease;
-}
-
-.stats-card:hover {
-  transform: translateY(-2px);
-}
+.stats-card { transition: transform .25s ease, box-shadow .25s ease; }
+.stats-card:hover { transform: translateY(-2px); box-shadow: 0 16px 40px rgba(2,6,23,.08); }
 
 .medicine-card {
   transition: all 0.3s ease;
@@ -65,20 +44,7 @@
 }
 
 /* Responsive adjustments */
-@media (max-width: 768px) {
-  .sidebar {
-    width: 100%;
-    position: static;
-  }
-  
-  .main-content {
-    flex-direction: column;
-  }
-  
-  .content-area {
-    padding: 1rem;
-  }
-}
+@media (max-width: 992px) { .sidebar { width: 200px; } .content-area { padding: 1rem; } }
 
 /* Loading animations */
 @keyframes fadeIn {

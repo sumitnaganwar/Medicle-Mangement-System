@@ -8,6 +8,7 @@ function RegisterPage() {
   const { setAuth } = useAuth();
   const [form, setForm] = useState({ name: '', email: '', password: '', address: '', role: 'Employee', avatarUrl: '' });
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState('');
 
@@ -32,20 +33,32 @@ function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess('');
     try {
       if (!form.avatarUrl) {
         setError('Photo is required');
         setLoading(false);
         return;
       }
-      const { data } = await authService.register(form);
-      if (data?.token) {
-        setAuth({ token: data.token, user: data.user });
-      }
-      navigate('/');
+      
+      console.log('Registering with data:', { ...form, avatarUrl: form.avatarUrl.substring(0, 50) + '...' });
+      const response = await authService.register(form);
+      console.log('Registration response:', response);
+      
+      // Ensure we do NOT keep any token from registration response
+      authService.logout();
+      setAuth({ token: null, user: null });
+      
+      setSuccess('Registration successful! Redirecting to login page...');
+      setTimeout(() => {
+        navigate('/login', { replace: true, state: { registered: true } });
+      }, 2000);
     } catch (e) {
-      const msg = e?.response?.data?.message || 'Registration failed';
-      setError(msg);
+      console.error('Registration error:', e);
+      console.error('Error response:', e?.response);
+      console.error('Error response data:', e?.response?.data);
+      const msg = e?.response?.data?.message || e?.message || 'Registration failed. Please check console for details.';
+      setError(`${msg}`);
     } finally {
       setLoading(false);
     }
@@ -55,6 +68,7 @@ function RegisterPage() {
     <div className="container" style={{ maxWidth: 480 }}>
       <h2 className="my-4">Register</h2>
       {error && <div className="alert alert-danger">{error}</div>}
+      {success && <div className="alert alert-success">{success}</div>}
       <form onSubmit={onSubmit} className="card p-3">
         <div className="mb-3">
           <label className="form-label">Photo</label>
@@ -86,6 +100,7 @@ function RegisterPage() {
           <select name="role" className="form-select" value={form.role} onChange={onChange} required>
             <option value="Owner">Owner</option>
             <option value="Employee">Employee</option>
+            <option value="Supplier">Supplier</option>
           </select>
         </div>
         <button className="btn btn-success" type="submit" disabled={loading}>

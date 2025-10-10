@@ -28,59 +28,75 @@ const Sidebar = () => {
     return () => { cancelled = true; };
   }, []);
 
-  const menuItems = [
+
+  // Role-based menus
+  const isOwner = user?.role === 'Owner';
+  const isEmployee = user?.role === 'Employee';
+  const isSupplier = user?.role === 'Supplier';
+
+  // Owner gets full access to all features
+  const ownerMenu = [
     { path: '/', icon: 'fas fa-tachometer-alt', label: 'Dashboard' },
     { path: '/medicines', icon: 'fas fa-pills', label: 'Medicines' },
     { path: '/customers', icon: 'fas fa-user-friends', label: 'Customers' },
     { path: '/billing', icon: 'fas fa-receipt', label: 'Billing' },
     { path: '/reports', icon: 'fas fa-chart-bar', label: 'Reports' },
-    { path: '/profit-analysis', icon: 'fas fa-chart-line', label: 'Profit Analysis' },
     { path: '/transactions', icon: 'fas fa-exchange-alt', label: 'Transactions' },
-    // Out-of-Stock will be injected below when dynamic count > 0
-    { path: '/expired-medicines', icon: 'fas fa-calendar-times', label: 'Expired Medicines History' },
-    { path: '/near-expiry', icon: 'fas fa-hourglass-half', label: 'Near Expiry Medicines' },
+    { path: '/profit-analysis', icon: 'fas fa-chart-line', label: 'Profit Analysis' },
+    { path: '/purchase', icon: 'fas fa-warehouse', label: 'Purchases' },
     { path: '/top-medicines', icon: 'fas fa-capsules', label: 'Top 10 Medicines' },
-    { path: '/profile', icon: 'fas fa-user', label: 'Profile' },
+    { path: '/near-expiry', icon: 'fas fa-hourglass-half', label: 'Near Expiry Medicines' },
+    { path: '/expired-medicines', icon: 'fas fa-calendar-times', label: 'Expired Medicines History' },
   ];
 
-  const enhancedMenuItems = zeroStockCount > 0
+  // Employees get limited access to basic operations
+  const employeeMenu = [
+    { path: '/', icon: 'fas fa-tachometer-alt', label: 'Dashboard' },
+    { path: '/medicines', icon: 'fas fa-pills', label: 'Medicines' },
+    { path: '/customers', icon: 'fas fa-user-friends', label: 'Customers' },
+    { path: '/billing', icon: 'fas fa-receipt', label: 'Billing' },
+    { path: '/reports', icon: 'fas fa-chart-bar', label: 'Reports' },
+  ];
+
+  // Suppliers get access to supplier portal features
+  const supplierMenu = [
+    { path: '/supplier/portal', icon: 'fas fa-home', label: 'Dashboard' },
+    { path: '/profile', icon: 'fas fa-id-card', label: 'My Profile' },
+    { path: '/supplier/owner', icon: 'fas fa-user-tie', label: 'Medical Owner' },
+  ];
+
+  // Add out-of-stock alert to owner menu if there are zero stock items
+  const finalOwnerMenu = zeroStockCount > 0
     ? [
-        ...menuItems.slice(0, 6),
+        ...ownerMenu.slice(0, 8),
         { path: '/out-of-stock', icon: 'fas fa-exclamation-triangle', label: `Out-of-Stock (${zeroStockCount})` },
-        ...menuItems.slice(6)
+        ...ownerMenu.slice(8)
       ]
-    : menuItems;
+    : ownerMenu;
 
-  // Hide certain sections for Owner role
-  const isOwner = user?.role === 'Owner';
-  const filteredMenuItems = isOwner
-    ? menuItems.filter((item) => !['/medicines', '/customers', '/billing'].includes(item.path))
-    : menuItems;
+  // Determine which menu to show based on role
+  const getMenuForRole = () => {
+    if (isSupplier) return supplierMenu;
+    if (isOwner) return finalOwnerMenu;
+    if (isEmployee) return employeeMenu;
+    return [];
+  };
 
-  // Build owner combined section (dynamic if provided by backend via user)
-  const dynamicOwnerLinks = Array.isArray(user?.ownerLinks)
-    ? user.ownerLinks
-    : Array.isArray(user?.menu?.owner)
-      ? user.menu.owner
-      : null;
-
-  const ownerExtraLinks = dynamicOwnerLinks && dynamicOwnerLinks.length > 0
-    ? dynamicOwnerLinks
-    : [
-        { path: '/owner/reports/top-medicines', label: 'Top 10 Medicines' },
-        { path: '/owner/reports/out-of-stock', label: 'Out-of-Stock List' },
-        { path: '/owner/reports/expired', label: 'Expired Medicines History' },
-      ];
-  const ownerCombinedItems = [...filteredMenuItems, ...ownerExtraLinks];
+  const currentMenu = getMenuForRole();
 
   return (
     <nav className="sidebar bg-light border-end" style={{ width: '250px', minHeight: 'calc(100vh - 60px)' }}>
       <div className="sidebar-sticky pt-3">
         <ul className="nav flex-column">
-          {isOwner && (
-            <li className="nav-item mt-1 px-3 text-muted" style={{ fontSize: 12 }}>Owner</li>
+          {/* Role indicator */}
+          {(isOwner || isEmployee || isSupplier) && (
+            <li className="nav-item mt-1 px-3 text-muted" style={{ fontSize: 12 }}>
+              {isOwner ? 'Owner' : isEmployee ? 'Employee' : 'Supplier'}
+            </li>
           )}
-          {(isOwner ? ownerCombinedItems : enhancedMenuItems).map((item) => (
+          
+          {/* Main menu items */}
+          {currentMenu.map((item) => (
             <li className="nav-item" key={item.path}>
               <NavLink
                 to={item.path}
@@ -94,34 +110,27 @@ const Sidebar = () => {
               </NavLink>
             </li>
           ))}
-          {/* Owner-only links (only when not merged) */}
-          {!isOwner && <OwnerLinks />}
+          
+          {/* Profile link for Owner/Employee */}
+          {!isSupplier && (
+            <>
+              <li className="nav-item mt-3 px-3 text-muted" style={{ fontSize: 12 }}>Account</li>
+              <li className="nav-item">
+                <NavLink
+                  to={'/profile'}
+                  className={({ isActive }) => `nav-link d-flex align-items-center ${isActive ? 'active text-primary' : 'text-dark'}`}
+                >
+                  <i className="fas fa-user me-3"></i>
+                  Profile
+                </NavLink>
+              </li>
+            </>
+          )}
         </ul>
       </div>
     </nav>
   );
 };
 
-const OwnerLinks = () => {
-  const { user } = useAuth();
-  if (user?.role !== 'Owner') return null;
-  const links = [
-    { path: '/owner/reports/top-medicines', label: 'Top 10 Medicines' },
-    { path: '/owner/reports/out-of-stock', label: 'Out-of-Stock List' },
-    { path: '/owner/reports/expired', label: 'Expired Medicines History' },
-  ];
-  return (
-    <>
-      <li className="nav-item mt-3 px-3 text-muted" style={{ fontSize: 12 }}>Owner</li>
-      {links.map(l => (
-        <li className="nav-item" key={l.path}>
-          <NavLink to={l.path} className={({ isActive }) => `nav-link ${isActive ? 'active text-primary' : 'text-dark'}`}>
-            {l.label}
-          </NavLink>
-        </li>
-      ))}
-    </>
-  );
-};
 
 export default Sidebar;

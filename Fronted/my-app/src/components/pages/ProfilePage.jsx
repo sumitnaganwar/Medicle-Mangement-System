@@ -159,7 +159,9 @@ function ProfilePage() {
                 <label className="form-label">Role</label>
                 <input value={form.role} readOnly className="form-control-plaintext" />
                 <small className="text-muted">
-                  {form.role === 'Owner' ? 'Owner: full administrative privileges' : form.role === 'Employee' ? 'Employee: limited operational access' : ''}
+                  {form.role === 'Owner' ? 'Owner: full administrative privileges' : 
+                   form.role === 'Employee' ? 'Employee: limited operational access' : 
+                   form.role === 'Supplier' ? 'Supplier: order management and delivery tracking' : ''}
                 </small>
               </div>
               <div className="col-md-12">

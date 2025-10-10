@@ -8,9 +8,6 @@ function LoginPage() {
   const { setAuth } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
-  const [otpSessionId, setOtpSessionId] = useState('');
-  const [otp, setOtp] = useState('');
-  const [step, setStep] = useState('login'); // 'login' | 'otp'
   const [loading, setLoading] = useState(false);
 
   function onChange(e) {
@@ -23,45 +20,43 @@ function LoginPage() {
     setLoading(true);
     setError('');
     try {
-      const { data } = await authService.login(form);
-      if (data?.otpSessionId) {
-        setOtpSessionId(data.otpSessionId);
-        setStep('otp');
-      } else if (data?.token) {
-        // fallback if backend returns token directly
-        try {
-          const profile = await userService.getProfile();
-          setAuth({ token: data.token, user: profile?.data || data.user || null });
-        } catch {
-          setAuth({ token: data.token, user: data.user || null });
-        }
-        navigate('/', { replace: true });
-      }
-    } catch (e) {
-      setError('Invalid credentials. Please check your email and password.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function onVerifyOtp(e) {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    try {
-      const { data } = await authService.verifyOtp(otpSessionId, otp);
+      const response = await authService.login(form);
+      const data = response.data;
+      
       if (data?.token) {
+        // Direct login successful
+        authService.setToken(data.token);
         try {
           const profile = await userService.getProfile();
-          setAuth({ token: data.token, user: profile?.data || data.user || null });
-        } catch {
-          setAuth({ token: data.token, user: data.user || null });
+          // Store only essential user data to avoid localStorage quota issues
+          const userData = profile?.data || data.user || null;
+          const essentialUserData = userData ? {
+            id: userData.id,
+            name: userData.name,
+            email: userData.email,
+            role: userData.role
+          } : null;
+          setAuth({ token: data.token, user: essentialUserData });
+        } catch (profileError) {
+          console.warn('Failed to fetch profile:', profileError);
+          // Store only essential user data to avoid localStorage quota issues
+          const userData = data.user || null;
+          const essentialUserData = userData ? {
+            id: userData.id,
+            name: userData.name,
+            email: userData.email,
+            role: userData.role
+          } : null;
+          setAuth({ token: data.token, user: essentialUserData });
         }
         navigate('/', { replace: true });
+      } else {
+        setError('Login failed: No token received from server');
       }
     } catch (e) {
-      const msg = e?.response?.data?.message || 'Invalid or expired OTP';
-      setError(msg);
+      console.error('Login error:', e);
+      const errorMessage = e?.response?.data?.message || e?.message || 'Invalid credentials. Please check your email and password.';
+      setError(`Login failed: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -69,41 +64,38 @@ function LoginPage() {
 
   return (
     <div className="container" style={{ maxWidth: 420 }}>
-      <h2 className="my-4">{step === 'login' ? 'Login' : 'Verify OTP'}</h2>
+      <h2 className="my-4">Login</h2>
       {error && <div className="alert alert-danger">{error}</div>}
-      {step === 'login' ? (
-        <form onSubmit={onSubmit} className="card p-3">
-          <div className="mb-3">
-            <label className="form-label">Email</label>
-            <input name="email" type="email" className="form-control" value={form.email} onChange={onChange} required />
-          </div>
-          <div className="mb-3">
-            <label className="form-label">Password</label>
-            <input name="password" type="password" className="form-control" value={form.password} onChange={onChange} required />
-          </div>
-          <button className="btn btn-primary" type="submit" disabled={loading}>
-            {loading ? 'Sending OTP...' : 'Login'}
-          </button>
-          <div className="mt-3">
-            <small>
-              No account? <Link to="/register">Register</Link>
-            </small>
-          </div>
-        </form>
-      ) : (
-        <form onSubmit={onVerifyOtp} className="card p-3">
-          <div className="mb-3">
-            <label className="form-label">Enter OTP sent to your email</label>
-            <input value={otp} onChange={(e) => setOtp(e.target.value)} className="form-control" placeholder="6-digit code" maxLength={6} />
-          </div>
-          <button className="btn btn-primary" type="submit" disabled={loading}>
-            {loading ? 'Verifying...' : 'Verify & Continue'}
-          </button>
-          <button type="button" className="btn btn-link" onClick={() => setStep('login')}>
-            Back
-          </button>
-        </form>
-      )}
+      <form onSubmit={onSubmit} className="card p-3">
+        <div className="mb-3">
+          <label className="form-label">Email</label>
+          <input name="email" type="email" className="form-control" value={form.email} onChange={onChange} required />
+        </div>
+        <div className="mb-3">
+          <label className="form-label">Password</label>
+          <input name="password" type="password" className="form-control" value={form.password} onChange={onChange} required />
+        </div>
+        <button className="btn btn-primary" type="submit" disabled={loading}>
+          {loading ? 'Logging in...' : 'Login'}
+        </button>
+                <div className="mt-3">
+                  <small>
+                    No account? <Link to="/register">Register</Link>
+                  </small>
+                </div>
+                <div className="mt-2">
+                  <button 
+                    type="button" 
+                    className="btn btn-outline-secondary btn-sm"
+                    onClick={() => {
+                      authService.clearStorage();
+                      alert('localStorage cleared! Storage size: ' + (authService.getStorageSize() / 1024).toFixed(2) + ' KB');
+                    }}
+                  >
+                    Clear Storage ({Math.round(authService.getStorageSize() / 1024)} KB)
+                  </button>
+                </div>
+      </form>
     </div>
   );
 }

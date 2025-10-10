@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Unified Order History</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .tabs { display: flex; margin-bottom: 20px; }
+        .tab { padding: 10px 20px; background: #f8f9fa; border: 1px solid #dee2e6; cursor: pointer; }
+        .tab.active { background: #007bff; color: white; }
+        .tab:hover { background: #e9ecef; }
+        .tab.active:hover { background: #0056b3; }
+        .content { border: 1px solid #dee2e6; padding: 20px; }
+        .order { margin: 10px 0; padding: 15px; background: #f8f9fa; border-radius: 5px; }
+        .status { padding: 3px 8px; border-radius: 3px; color: white; font-size: 12px; }
+        .pending { background: #ffc107; }
+        .accepted { background: #007bff; }
+        .paid { background: #17a2b8; }
+        .shipped { background: #6c757d; }
+        .delivered { background: #28a745; }
+        .btn { padding: 8px 16px; margin: 5px; cursor: pointer; border: none; border-radius: 3px; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+        .step { margin: 15px 0; padding: 10px; background: #e7f3ff; border-left: 4px solid #007bff; }
+        .success { background: #d4edda; border-left-color: #28a745; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Unified Order History System</h1>
+        
+        <div class="step success">
+            <h3>✅ What This Demonstrates</h3>
+            <p><strong>Single Order History Section:</strong> Only one "Order History" tab that shows all successfully delivered orders</p>
+            <p><strong>Automatic Removal:</strong> Orders are removed from dashboard after delivery confirmation</p>
+            <p><strong>Clear Status:</strong> Shows "Order Successfully Delivered" status</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('orders')">Orders (Active)</div>
+            <div class="tab" onclick="showTab('history')">Order History (0)</div>
+        </div>
+
+        <div id="orders-content" class="content">
+            <h3>📋 Active Orders</h3>
+            <p>Orders that need action (not yet delivered)</p>
+            <button class="btn btn-primary" onclick="createTestOrder()">Create Test Order</button>
+            <div id="active-orders"></div>
+        </div>
+
+        <div id="history-content" class="content" style="display: none;">
+            <h3>📚 Order History</h3>
+            <p>Orders that have been successfully delivered and removed from dashboard</p>
+            <div id="delivered-orders"></div>
+        </div>
+
+        <div class="step">
+            <h3>🎯 Test Workflow</h3>
+            <ol>
+                <li><strong>Create Test Order</strong> - Click the button above</li>
+                <li><strong>Accept Order</strong> - Click "Accept" button</li>
+                <li><strong>Process Payment</strong> - Click "Process Payment" button</li>
+                <li><strong>Ship Order</strong> - Click "Mark as Shipped" button</li>
+                <li><strong>Confirm Delivery</strong> - Click "Confirm Delivery" button</li>
+                <li><strong>Check Order History</strong> - Switch to "Order History" tab</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        let currentOrderId = null;
+
+        function showTab(tabName) {
+            // Hide all content
+            document.getElementById('orders-content').style.display = 'none';
+            document.getElementById('history-content').style.display = 'none';
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected content and activate tab
+            if (tabName === 'orders') {
+                document.getElementById('orders-content').style.display = 'block';
+                document.querySelectorAll('.tab')[0].classList.add('active');
+            } else {
+                document.getElementById('history-content').style.display = 'block';
+                document.querySelectorAll('.tab')[1].classList.add('active');
+            }
+            
+            loadOrders();
+        }
+
+        function loadOrders() {
+            const orders = JSON.parse(localStorage.getItem('purchase_orders_v1') || '[]');
+            const activeOrders = orders.filter(order => order.status !== 'DELIVERED' && order.status !== 'REJECTED');
+            const deliveredOrders = orders.filter(order => order.status === 'DELIVERED');
+            
+            displayActiveOrders(activeOrders);
+            displayDeliveredOrders(deliveredOrders);
+            
+            // Update tab count
+            document.querySelectorAll('.tab')[1].textContent = `Order History (${deliveredOrders.length})`;
+        }
+
+        function displayActiveOrders(orders) {
+            const container = document.getElementById('active-orders');
+            
+            if (orders.length === 0) {
+                container.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">No active orders</p>';
+                return;
+            }
+
+            container.innerHTML = orders.map(order => `
+                <div class="order">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>Order ID:</strong> ${order.id}<br>
+                            <strong>Customer:</strong> ${order.customerName}<br>
+                            <strong>Total:</strong> $${order.total?.toFixed(2) || '0.00'}<br>
+                            <strong>Status:</strong> <span class="status ${order.status.toLowerCase()}">${order.status}</span>
+                        </div>
+                        <div>
+                            ${getActionButtons(order)}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function displayDeliveredOrders(orders) {
+            const container = document.getElementById('delivered-orders');
+            
+            if (orders.length === 0) {
+                container.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">No order history found</p>';
+                return;
+            }
+
+            container.innerHTML = orders.map(order => `
+                <div class="order">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>Order ID:</strong> ${order.id}<br>
+                            <strong>Customer:</strong> ${order.customerName}<br>
+                            <strong>Total:</strong> $${order.total?.toFixed(2) || '0.00'}<br>
+                            <strong>Order Date:</strong> ${new Date(order.createdAt).toLocaleDateString()}<br>
+                            <strong>Delivered Date:</strong> ${order.deliveredAt ? new Date(order.deliveredAt).toLocaleDateString() : 'N/A'}<br>
+                            <strong>Status:</strong> <span class="status delivered">Order Successfully Delivered</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getActionButtons(order) {
+            switch (order.status) {
+                case 'PENDING':
+                    return `
+                        <button class="btn btn-success" onclick="acceptOrder('${order.id}')">Accept</button>
+                        <button class="btn btn-warning" onclick="rejectOrder('${order.id}')">Reject</button>
+                    `;
+                case 'ACCEPTED':
+                    return '<span style="color: #666;">Waiting for payment</span>';
+                case 'PAID':
+                    return `<button class="btn btn-info" onclick="shipOrder('${order.id}')">Mark as Shipped</button>`;
+                case 'SHIPPED':
+                    return `<button class="btn btn-success" onclick="confirmDelivery('${order.id}')">Confirm Delivery</button>`;
+                default:
+                    return '';
+            }
+        }
+
+        function createTestOrder() {
+            const testOrder = {
+                customerName: "Test Customer",
+                customerPhone: "1234567890",
+                customerEmail: "test@example.com",
+                deliveryAddress: "123 Test Street, Test City",
+                items: [
+                    {
+                        medicineId: "med-1",
+                        medicineName: "Paracetamol 500mg",
+                        price: 1.50,
+                        quantity: 1
+                    }
+                ],
+                total: 1.50,
+                status: "PENDING"
+            };
+            
+            const orders = JSON.parse(localStorage.getItem('purchase_orders_v1') || '[]');
+            const id = `PO-${Date.now()}`;
+            const createdAt = new Date().toISOString();
+            const newOrder = { ...testOrder, id, createdAt };
+            
+            orders.push(newOrder);
+            localStorage.setItem('purchase_orders_v1', JSON.stringify(orders));
+            currentOrderId = id;
+            
+            alert(`Test order created: ${id}`);
+            loadOrders();
+        }
+
+        function acceptOrder(orderId) {
+            updateOrderStatus(orderId, 'ACCEPTED');
+        }
+
+        function rejectOrder(orderId) {
+            updateOrderStatus(orderId, 'REJECTED');
+        }
+
+        function processPayment() {
+            if (currentOrderId) {
+                updateOrderStatus(currentOrderId, 'PAID');
+            } else {
+                alert('Please create a test order first');
+            }
+        }
+
+        function shipOrder(orderId) {
+            updateOrderStatus(orderId, 'SHIPPED');
+        }
+
+        function confirmDelivery(orderId) {
+            const orders = JSON.parse(localStorage.getItem('purchase_orders_v1') || '[]');
+            const orderIndex = orders.findIndex(o => o.id === orderId);
+            
+            if (orderIndex >= 0) {
+                orders[orderIndex].status = 'DELIVERED';
+                orders[orderIndex].deliveredAt = new Date().toISOString();
+                localStorage.setItem('purchase_orders_v1', JSON.stringify(orders));
+                alert('Delivery confirmed! Order moved to Order History.');
+                loadOrders();
+            }
+        }
+
+        function updateOrderStatus(orderId, status) {
+            const orders = JSON.parse(localStorage.getItem('purchase_orders_v1') || '[]');
+            const orderIndex = orders.findIndex(o => o.id === orderId);
+            
+            if (orderIndex >= 0) {
+                orders[orderIndex].status = status;
+                localStorage.setItem('purchase_orders_v1', JSON.stringify(orders));
+                alert(`Order ${status.toLowerCase()} successfully!`);
+                loadOrders();
+            }
+        }
+
+        // Load orders on page load
+        window.onload = function() {
+            loadOrders();
+        };
+    </script>
+</body>
+</html>
+

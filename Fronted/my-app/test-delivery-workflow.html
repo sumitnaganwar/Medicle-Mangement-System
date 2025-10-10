@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Delivery Workflow</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .step { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .btn-primary { background-color: #007bff; color: white; border: none; border-radius: 3px; }
+        .btn-success { background-color: #28a745; color: white; border: none; border-radius: 3px; }
+        .btn-info { background-color: #17a2b8; color: white; border: none; border-radius: 3px; }
+        .order { margin: 10px 0; padding: 10px; background-color: #f8f9fa; border-radius: 3px; }
+        .status { padding: 3px 8px; border-radius: 3px; color: white; font-size: 12px; }
+        .pending { background-color: #ffc107; }
+        .accepted { background-color: #007bff; }
+        .paid { background-color: #17a2b8; }
+        .shipped { background-color: #6c757d; }
+        .delivered { background-color: #28a745; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Delivery Workflow</h1>
+    <p>This page demonstrates how orders move from dashboard to Order History after delivery.</p>
+
+    <div class="step info">
+        <h3>📋 Current Orders in System</h3>
+        <div id="currentOrders">Loading...</div>
+    </div>
+
+    <div class="step">
+        <h3>🎯 Test Actions</h3>
+        <button class="btn-primary" onclick="createTestOrder()">1. Create Test Order</button>
+        <button class="btn-success" onclick="acceptOrder()">2. Accept Order</button>
+        <button class="btn-info" onclick="processPayment()">3. Process Payment</button>
+        <button class="btn-info" onclick="shipOrder()">4. Ship Order</button>
+        <button class="btn-success" onclick="confirmDelivery()">5. Confirm Delivery</button>
+        <button class="btn-primary" onclick="refreshOrders()">🔄 Refresh View</button>
+    </div>
+
+    <div class="step success">
+        <h3>✅ Expected Result</h3>
+        <p>After clicking "Confirm Delivery", the order should:</p>
+        <ul>
+            <li>✅ Disappear from "Delivery Management" dashboard</li>
+            <li>✅ Appear in "Order History" section</li>
+            <li>✅ Show "DELIVERED" status with delivery timestamp</li>
+        </ul>
+    </div>
+
+    <div class="step">
+        <h3>📊 Order History (Delivered Orders)</h3>
+        <div id="orderHistory">Loading...</div>
+    </div>
+
+    <script>
+        let currentOrderId = null;
+
+        function loadOrders() {
+            // Load active orders
+            const activeOrders = JSON.parse(localStorage.getItem('purchase_orders_v1') || '[]');
+            const activeOrdersFiltered = activeOrders.filter(order => 
+                order.status !== 'DELIVERED' && order.status !== 'REJECTED'
+            );
+            
+            // Load delivered orders
+            const deliveredOrders = activeOrders.filter(order => order.status === 'DELIVERED');
+            
+            displayOrders(activeOrdersFiltered, 'currentOrders');
+            displayOrders(deliveredOrders, 'orderHistory');
+        }
+
+        function displayOrders(orders, containerId) {
+            const container = document.getElementById(containerId);
+            
+            if (orders.length === 0) {
+                container.innerHTML = '<p style="color: #666;">No orders found</p>';
+                return;
+            }
+
+            container.innerHTML = orders.map(order => `
+                <div class="order">
+                    <strong>Order ID:</strong> ${order.id}<br>
+                    <strong>Customer:</strong> ${order.customerName}<br>
+                    <strong>Total:</strong> $${order.total?.toFixed(2) || '0.00'}<br>
+                    <strong>Status:</strong> <span class="status ${order.status.toLowerCase()}">${order.status}</span><br>
+                    <strong>Created:</strong> ${new Date(order.createdAt).toLocaleString()}<br>
+                    ${order.deliveredAt ? `<strong>Delivered:</strong> ${new Date(order.deliveredAt).toLocaleString()}<br>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function createTestOrder() {
+            const testOrder = {
+                customerName: "Test Customer",
+                customerPhone: "1234567890",
+                customerEmail: "test@example.com",
+                deliveryAddress: "123 Test Street, Test City",
+                items: [
+                    {
+                        medicineId: "med-1",
+                        medicineName: "Paracetamol 500mg",
+                        price: 1.50,
+                        quantity: 1
+                    }
+                ],
+                total: 1.50,
+                status: "PENDING"
+            };
+            
+            const orders = JSON.parse(localStorage.getItem('purchase_orders_v1') || '[]');
+            const id = `PO-${Date.now()}`;
+            const createdAt = new Date().toISOString();
+            const newOrder = { ...testOrder, id, createdAt };
+            
+            orders.push(newOrder);
+            localStorage.setItem('purchase_orders_v1', JSON.stringify(orders));
+            currentOrderId = id;
+            
+            alert(`Test order created: ${id}`);
+            loadOrders();
+        }
+
+        function acceptOrder() {
+            if (!currentOrderId) {
+                alert('Please create a test order first');
+                return;
+            }
+            
+            const orders = JSON.parse(localStorage.getItem('purchase_orders_v1') || '[]');
+            const orderIndex = orders.findIndex(o => o.id === currentOrderId);
+            
+            if (orderIndex >= 0) {
+                orders[orderIndex].status = 'ACCEPTED';
+                localStorage.setItem('purchase_orders_v1', JSON.stringify(orders));
+                alert('Order accepted successfully!');
+                loadOrders();
+            }
+        }
+
+        function processPayment() {
+            if (!currentOrderId) {
+                alert('Please create a test order first');
+                return;
+            }
+            
+            const orders = JSON.parse(localStorage.getItem('purchase_orders_v1') || '[]');
+            const orderIndex = orders.findIndex(o => o.id === currentOrderId);
+            
+            if (orderIndex >= 0 && orders[orderIndex].status === 'ACCEPTED') {
+                orders[orderIndex].status = 'PAID';
+                localStorage.setItem('purchase_orders_v1', JSON.stringify(orders));
+                alert('Payment processed successfully!');
+                loadOrders();
+            } else {
+                alert('Order must be ACCEPTED before payment');
+            }
+        }
+
+        function shipOrder() {
+            if (!currentOrderId) {
+                alert('Please create a test order first');
+                return;
+            }
+            
+            const orders = JSON.parse(localStorage.getItem('purchase_orders_v1') || '[]');
+            const orderIndex = orders.findIndex(o => o.id === currentOrderId);
+            
+            if (orderIndex >= 0 && orders[orderIndex].status === 'PAID') {
+                orders[orderIndex].status = 'SHIPPED';
+                localStorage.setItem('purchase_orders_v1', JSON.stringify(orders));
+                alert('Order shipped successfully!');
+                loadOrders();
+            } else {
+                alert('Order must be PAID before shipping');
+            }
+        }
+
+        function confirmDelivery() {
+            if (!currentOrderId) {
+                alert('Please create a test order first');
+                return;
+            }
+            
+            const orders = JSON.parse(localStorage.getItem('purchase_orders_v1') || '[]');
+            const orderIndex = orders.findIndex(o => o.id === currentOrderId);
+            
+            if (orderIndex >= 0 && orders[orderIndex].status === 'SHIPPED') {
+                orders[orderIndex].status = 'DELIVERED';
+                orders[orderIndex].deliveredAt = new Date().toISOString();
+                localStorage.setItem('purchase_orders_v1', JSON.stringify(orders));
+                alert('Delivery confirmed successfully! Order moved to Order History.');
+                loadOrders();
+            } else {
+                alert('Order must be SHIPPED before delivery confirmation');
+            }
+        }
+
+        function refreshOrders() {
+            loadOrders();
+        }
+
+        // Load orders on page load
+        window.onload = function() {
+            loadOrders();
+        };
+    </script>
+</body>
+</html>
+

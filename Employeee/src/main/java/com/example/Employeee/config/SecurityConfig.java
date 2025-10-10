@@ -28,6 +28,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
                         .requestMatchers("/api/users/public/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users/owners").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/users/suppliers").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/suppliers").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/suppliers/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex

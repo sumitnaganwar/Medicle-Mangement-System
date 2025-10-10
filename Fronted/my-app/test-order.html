@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Order Creation</title>
+</head>
+<body>
+    <h1>Test Order Creation</h1>
+    <button onclick="createTestOrder()">Create Test Order</button>
+    <button onclick="clearOrders()">Clear All Orders</button>
+    <div id="result"></div>
+
+    <script>
+        // Sample order data
+        const testOrder = {
+            customerName: "Sumit Suresh Naganwar",
+            customerPhone: "1234567890",
+            customerEmail: "sumit@example.com",
+            deliveryAddress: "123 Test Street, Test City",
+            items: [
+                {
+                    medicineId: "med-1",
+                    medicineName: "Paracetamol 500mg",
+                    price: 0.50,
+                    quantity: 1
+                }
+            ],
+            total: 0.50,
+            status: "PENDING"
+        };
+
+        function createTestOrder() {
+            try {
+                // Get existing orders
+                let orders = JSON.parse(localStorage.getItem('purchase_orders_v1') || '[]');
+                
+                // Create new order
+                const id = `PO-${Date.now()}`;
+                const createdAt = new Date().toISOString();
+                const newOrder = { ...testOrder, id, createdAt };
+                
+                // Add to orders
+                orders.push(newOrder);
+                localStorage.setItem('purchase_orders_v1', JSON.stringify(orders));
+                
+                document.getElementById('result').innerHTML = `
+                    <h3>Test Order Created Successfully!</h3>
+                    <p><strong>Order ID:</strong> ${id}</p>
+                    <p><strong>Customer:</strong> ${newOrder.customerName}</p>
+                    <p><strong>Total:</strong> $${newOrder.total}</p>
+                    <p><strong>Status:</strong> ${newOrder.status}</p>
+                    <p>You can now test the Accept/Reject buttons in the Supplier Portal.</p>
+                `;
+            } catch (error) {
+                document.getElementById('result').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+
+        function clearOrders() {
+            localStorage.removeItem('purchase_orders_v1');
+            localStorage.removeItem('purchase_deliveries_v1');
+            localStorage.removeItem('purchase_bills_v1');
+            document.getElementById('result').innerHTML = '<p>All orders cleared!</p>';
+        }
+
+        // Show current orders on load
+        window.onload = function() {
+            const orders = JSON.parse(localStorage.getItem('purchase_orders_v1') || '[]');
+            if (orders.length > 0) {
+                document.getElementById('result').innerHTML = `
+                    <h3>Current Orders (${orders.length})</h3>
+                    ${orders.map(order => `
+                        <div style="border: 1px solid #ccc; padding: 10px; margin: 5px 0;">
+                            <strong>${order.id}</strong> - ${order.customerName} - $${order.total} - ${order.status}
+                        </div>
+                    `).join('')}
+                `;
+            } else {
+                document.getElementById('result').innerHTML = '<p>No orders found. Click "Create Test Order" to add one.</p>';
+            }
+        };
+    </script>
+</body>
+</html>
+

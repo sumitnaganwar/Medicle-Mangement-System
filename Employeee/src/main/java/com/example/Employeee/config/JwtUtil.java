@@ -25,7 +25,12 @@ public class JwtUtil {
     }
 
     public String getSubject(String token) {
-        return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody().getSubject();
+        try {
+            return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody().getSubject();
+        } catch (Exception e) {
+            System.err.println("JWT parsing failed: " + e.getMessage());
+            throw e;
+        }
     }
 }
 
