@@ -23,6 +23,10 @@ public class Supplier {
     private String notes;
     private String avatarUrl;
 
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "created_by_user_id")
+    private User createdBy;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -141,4 +145,7 @@ public class Supplier {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    public User getCreatedBy() { return createdBy; }
+    public void setCreatedBy(User createdBy) { this.createdBy = createdBy; }
 }
